@@ -1,0 +1,7 @@
+interface:
+  display_name: "Weixin MP API IP Whitelist"
+  short_description: "Update Weixin MP API whitelist with OpenCLI."
+  default_prompt: "Use $weixin-mp-api-ip-whitelist to add API IP whitelist entries to the Weixin MP backend."
+
+policy:
+  allow_implicit_invocation: true
