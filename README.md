@@ -24,7 +24,7 @@
 
 ## 特性
 
-- **AppID 显式隔离**：操作前确认控制台 AppID 与任务上下文中的 `MP_APP_ID` 一致，避免把 IP 加到错误公众号上
+- **AppID 显式隔离**：操作前确认控制台 AppID 与任务上下文中的 `WECHAT_APP_ID` 一致，避免把 IP 加到错误公众号上
 - **追加而非覆盖**：读取已有白名单内容，与目标 IP 合并后再回写，绝不盲替换
 - **出口 IP 自动发现**：通过 `api.ipify.org` / `ifconfig.me` / `4.ipw.cn` 探测当前机器出口公网 IPv4
 - **可视化登录**：保留前台浏览器窗口，等待用户 / 管理员扫码，不会索要账号密码
@@ -42,10 +42,12 @@
 将 AppID 放进当前会话的环境变量，避免硬编码到 skill 内：
 
 ```bash
-export MP_APP_ID=wx_your_official_account_appid
+export WECHAT_APP_ID=wx_your_official_account_appid
 ```
 
-多公众号场景下，请明确在任务上下文中指出当前 `MP_APP_ID`，避免误操作。
+首次使用时，本 skill 会告知用户：如果是为了配合 `baoyu-post-to-wechat` 解除 IP 白名单阻塞，会读取 `~/.baoyu-skills/.env` 中的 `WECHAT_APP_ID`；如果不是使用 `baoyu-post-to-wechat`，需要用户手动配置或提供 `WECHAT_APP_ID`。
+
+多公众号场景下，请明确在任务上下文中指出当前 `WECHAT_APP_ID`，避免误操作。
 
 ---
 
@@ -54,7 +56,7 @@ export MP_APP_ID=wx_your_official_account_appid
 ```bash
 # 1. 启动 OpenCLI Browser，打开目标公众号控制台
 opencli browser --session weixin-mp-ip --window foreground open \
-  "https://developers.weixin.qq.com/console/product/mp/${MP_APP_ID}?tab1=basicInfo&tab2=dev"
+  "https://developers.weixin.qq.com/console/product/mp/${WECHAT_APP_ID}?tab1=basicInfo&tab2=dev"
 
 # 2. 让浏览器处理登录 / 扫码
 opencli browser --session weixin-mp-ip wait time 5 && \
@@ -82,7 +84,7 @@ opencli browser --session weixin-mp-ip state
 └────────┬─────────┘
          ▼
 ┌──────────────────┐
-│  解析 MP_APP_ID  │  ← env / .env / 任务上下文 / 用户输入
+│  解析 WECHAT_APP_ID │ ← env / .env / 任务上下文 / 用户输入
 └────────┬─────────┘
          ▼
 ┌──────────────────┐
@@ -118,7 +120,7 @@ opencli browser --session weixin-mp-ip state
 | 自定义素材上传脚本 | `access_token` 获取失败且返回 IP 相关错误码 | 同上 |
 | 多账号批量发布 | 当前 IP 切换导致部分账号失败 | 逐个 AppID 调用本 skill |
 
-调用方应在 `MP_APP_ID` 缺失时主动暂停并询问用户，而不是让本 skill 自行猜测。
+调用方应在 `WECHAT_APP_ID` 缺失时先确认触发来源：如果来自 `baoyu-post-to-wechat`，读取 `~/.baoyu-skills/.env`；其他场景应暂停并询问用户手动配置或提供 AppID，而不是猜测。
 
 ---
 

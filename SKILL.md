@@ -12,40 +12,44 @@ Use OpenCLI Browser to open the Weixin MP developer console for the target Offic
 Target console URL template:
 
 ```text
-https://developers.weixin.qq.com/console/product/mp/<MP_APP_ID>?tab1=basicInfo&tab2=dev
+https://developers.weixin.qq.com/console/product/mp/<WECHAT_APP_ID>?tab1=basicInfo&tab2=dev
 ```
 
 ## Prerequisites
 
 Before relying on this skill during WeChat publishing or upload workflows, make sure the target Official Account AppID is already configured and easy to read.
 
-- Prefer configuring `MP_APP_ID` as an environment variable in the shell/session that runs Codex or the WeChat workflow:
+- On the first use in a conversation, tell the user: this skill will read `WECHAT_APP_ID` from `~/.baoyu-skills/.env` when it is being used to unblock `baoyu-post-to-wechat`; if they are not using `baoyu-post-to-wechat`, they need to manually configure or provide `WECHAT_APP_ID`.
+- Prefer configuring `WECHAT_APP_ID` as an environment variable in the shell/session that runs Codex or the WeChat workflow:
 
 ```bash
-export MP_APP_ID=wx_your_official_account_appid
+export WECHAT_APP_ID=wx_your_official_account_appid
 ```
 
-- If the WeChat-related publishing/upload skill uses a project `.env` or config file, put the same `MP_APP_ID` value there and make sure that skill exposes or preserves it in the task context.
+- When this skill is triggered by `baoyu-post-to-wechat`, read `WECHAT_APP_ID` from `~/.baoyu-skills/.env` if it is not already available in the current environment or task context.
+- If the WeChat-related publishing/upload skill uses a project `.env` or config file, put the same `WECHAT_APP_ID` value there and make sure that skill exposes or preserves it in the task context.
 - Do not hard-code a personal AppID inside this skill.
-- If multiple Official Accounts are used, keep the active `MP_APP_ID` explicit in the task context so the whitelist update is applied to the correct account.
-- If `MP_APP_ID` is missing when an IP whitelist failure happens, pause and ask the user to configure or provide it before opening the Weixin developers console.
+- If multiple Official Accounts are used, keep the active `WECHAT_APP_ID` explicit in the task context so the whitelist update is applied to the correct account.
+- If `WECHAT_APP_ID` is missing when an IP whitelist failure happens, pause and ask the user to configure or provide it before opening the Weixin developers console.
 
 ## Quick Start
 
-1. Read `MP_APP_ID` from the existing WeChat-related skill configuration, environment, workflow settings, user request, developer console URL, or nearby workflow context. AppIDs usually look like `wx...`.
-2. If `MP_APP_ID` is missing or ambiguous, ask the user to configure or provide the target Official Account AppID before opening the console.
-3. Collect the IPs or CIDRs from the user request. If the user did not provide an IP and the trigger is a WeChat API whitelist failure, get the current outbound IP first; see "Outbound IP Discovery".
-4. Normalize obvious separators mentally before pasting: accept one IP/CIDR per line in the final whitelist value.
-5. Open the console after replacing `<MP_APP_ID>`:
+1. On the first use in a conversation, notify the user that `WECHAT_APP_ID` is read from `~/.baoyu-skills/.env` only when this skill is being used with `baoyu-post-to-wechat`; otherwise the user must configure or provide it manually.
+2. Read `WECHAT_APP_ID` from the existing WeChat-related skill configuration, environment, workflow settings, user request, developer console URL, or nearby workflow context. AppIDs usually look like `wx...`.
+3. If this skill was triggered by `baoyu-post-to-wechat` and `WECHAT_APP_ID` is still missing, read it from `~/.baoyu-skills/.env`.
+4. If `WECHAT_APP_ID` is still missing or ambiguous, ask the user to configure or provide the target Official Account AppID before opening the console.
+5. Collect the IPs or CIDRs from the user request. If the user did not provide an IP and the trigger is a WeChat API whitelist failure, get the current outbound IP first; see "Outbound IP Discovery".
+6. Normalize obvious separators mentally before pasting: accept one IP/CIDR per line in the final whitelist value.
+7. Open the console after replacing `<WECHAT_APP_ID>`:
 
 ```bash
-opencli browser --session weixin-mp-ip --window foreground open 'https://developers.weixin.qq.com/console/product/mp/<MP_APP_ID>?tab1=basicInfo&tab2=dev' && opencli browser --session weixin-mp-ip state
+opencli browser --session weixin-mp-ip --window foreground open 'https://developers.weixin.qq.com/console/product/mp/<WECHAT_APP_ID>?tab1=basicInfo&tab2=dev' && opencli browser --session weixin-mp-ip state
 ```
 
-6. If the page shows login or verification QR code, leave the browser window visible and wait for the user/admin to scan. Do not ask the user for credentials.
-7. Use `opencli browser --session weixin-mp-ip state` after every navigation or modal change. Use element indices from state for clicks/types.
-8. Confirm the page AppID matches `MP_APP_ID` before editing any whitelist.
-9. Locate the API IP whitelist editor in the development/basic-info area, read existing entries, append missing IPs, then submit.
+8. If the page shows login or verification QR code, leave the browser window visible and wait for the user/admin to scan. Do not ask the user for credentials.
+9. Use `opencli browser --session weixin-mp-ip state` after every navigation or modal change. Use element indices from state for clicks/types.
+10. Confirm the page AppID matches `WECHAT_APP_ID` before editing any whitelist.
+11. Locate the API IP whitelist editor in the development/basic-info area, read existing entries, append missing IPs, then submit.
 
 ## Outbound IP Discovery
 
@@ -80,7 +84,7 @@ Use the outbound IP of the machine where this skill is running. Do not add unrel
 Always append, never replace blindly:
 
 1. Open the whitelist edit dialog or text area.
-2. Confirm the visible page AppID is the intended `MP_APP_ID`.
+2. Confirm the visible page AppID is the intended `WECHAT_APP_ID`.
 3. Read the current textarea/input value with `opencli browser --session weixin-mp-ip get value <index>`.
 4. Merge current entries with the target list, keeping one IP/CIDR per line.
 5. Preserve existing entries exactly unless a harmless whitespace cleanup is needed.
@@ -123,6 +127,6 @@ opencli browser --session weixin-mp-ip screenshot /tmp/weixin-mp-auth-qr.png
 Before reporting success:
 
 - Confirm the page shows a success toast/state, or reopen/read the whitelist field and verify all requested IPs are present.
-- Confirm the final page still belongs to the target `MP_APP_ID`.
+- Confirm the final page still belongs to the target `WECHAT_APP_ID`.
 - Report the exact IPs added and mention any IPs that were already present.
 - If unable to find the whitelist editor because the UI changed, stop after opening the relevant console page and report the current visible labels from `opencli browser --session weixin-mp-ip state`.
