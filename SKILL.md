@@ -1,5 +1,6 @@
 ---
 name: weixin-mp-api-ip-whitelist
+version: 0.1.0
 description: Add or update WeChat Official Account / Weixin MP backend API IP whitelist entries for a specific WeChat Official Account AppID through OpenCLI Browser. Use when the user asks to configure API IP whitelist, add server IPs, update IP whitelist, handle QR-code login/admin verification for a Weixin developers console mp product URL, or when another WeChat/Weixin API workflow such as posting articles, uploading images, or publishing to WeChat fails or stalls because the current server/export IP is not in the API IP whitelist.
 ---
 

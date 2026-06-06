@@ -4,6 +4,7 @@
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-blueviolet)](https://docs.claude.com/en/docs/claude-code/skills)
 [![Codex Skill](https://img.shields.io/badge/Codex-Skill-4B0082)](https://developers.openai.com/codex)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)](#)
 [![OpenCLI](https://img.shields.io/badge/powered%20by-OpenCLI%20Browser-orange)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
