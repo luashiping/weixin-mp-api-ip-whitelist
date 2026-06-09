@@ -4,7 +4,7 @@
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-blueviolet)](https://docs.claude.com/en/docs/claude-code/skills)
 [![Codex Skill](https://img.shields.io/badge/Codex-Skill-4B0082)](https://developers.openai.com/codex)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue)](#)
+[![Version](https://img.shields.io/badge/version-0.2.1-blue)](#)
 [![OpenCLI](https://img.shields.io/badge/powered%20by-OpenCLI%20Browser-orange)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -60,7 +60,7 @@ opencli browser --session weixin-mp-ip --window foreground open \
   "https://developers.weixin.qq.com/console/product/mp/${WECHAT_APP_ID}?tab1=basicInfo&tab2=dev"
 
 # 2. 让浏览器处理登录 / 扫码
-opencli browser --session weixin-mp-ip wait time 5 && \
+opencli browser --session weixin-mp-ip wait time 60 && \
   opencli browser --session weixin-mp-ip state
 
 # 3. 登录完成后优先使用 SKILL.md 的「JS Fast Path」
@@ -99,7 +99,7 @@ opencli browser --session weixin-mp-ip state
 └────────┬─────────┘
          ▼
 ┌──────────────────┐
-│  登录 / 管理员核验 │  ← wait + state，必要时截图远程扫码
+│  登录 / 管理员核验 │  ← wait 60 + state，必要时截图远程扫码
 └────────┬─────────┘
          ▼
 ┌──────────────────┐

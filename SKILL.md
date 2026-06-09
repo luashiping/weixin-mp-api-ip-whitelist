@@ -1,6 +1,6 @@
 ---
 name: weixin-mp-api-ip-whitelist
-version: 0.2.0
+version: 0.2.1
 description: Add or update WeChat Official Account / Weixin MP backend API IP whitelist entries for a specific WeChat Official Account AppID through OpenCLI Browser. Use when the user asks to configure API IP whitelist, add server IPs, update IP whitelist, handle QR-code login/admin verification for a Weixin developers console mp product URL, or when another WeChat/Weixin API workflow such as posting articles, uploading images, or publishing to WeChat fails or stalls because the current server/export IP is not in the API IP whitelist.
 ---
 
@@ -47,7 +47,7 @@ export WECHAT_APP_ID=wx_your_official_account_appid
 opencli browser --session weixin-mp-ip --window foreground open 'https://developers.weixin.qq.com/console/product/mp/<WECHAT_APP_ID>?tab1=basicInfo&tab2=dev' && opencli browser --session weixin-mp-ip state
 ```
 
-8. If the page shows login or verification QR code, leave the browser window visible and wait for the user/admin to scan. Do not ask the user for credentials.
+8. If the page shows login or verification QR code, leave the browser window visible and wait up to 60 seconds for the user/admin to scan. Do not ask the user for credentials.
 9. After login, prefer the "JS Fast Path" to find the IP whitelist editor, merge entries, and submit. Use `state`/indexed clicks only as a fallback when the script reports that it cannot locate the editor or submit control.
 10. Confirm the page AppID matches `WECHAT_APP_ID` before editing any whitelist.
 11. Locate the API IP whitelist editor in the development/basic-info area, read existing entries, append missing IPs, then submit.
@@ -78,7 +78,7 @@ Use the outbound IP of the machine where this skill is running. Do not add unrel
 - Use `eval` for the JS fast path below. It may edit the whitelist only after the visible page is confirmed to belong to the intended `WECHAT_APP_ID`, and it must return the old value, merged value, and submit status.
 - Run `state` after every page-changing click.
 - Prefer exact visible labels such as `开发`, `开发设置`, `基本配置`, `IP白名单`, `服务器IP`, `修改`, `配置`, `确定`, `保存`, or `提交`.
-- If a QR-code verification modal appears after saving, wait for the scan, then verify the success state.
+- If a QR-code verification modal appears after saving, wait up to 60 seconds for the scan, then verify the success state.
 
 ## JS Fast Path
 
@@ -174,7 +174,7 @@ Always append, never replace blindly:
 If login is required:
 
 ```bash
-opencli browser --session weixin-mp-ip wait time 5 && opencli browser --session weixin-mp-ip state
+opencli browser --session weixin-mp-ip wait time 60 && opencli browser --session weixin-mp-ip state
 ```
 
 Repeat until the page leaves the login screen. Tell the user the visible browser window is ready for scanning only if they have not already scanned.
@@ -182,7 +182,7 @@ Repeat until the page leaves the login screen. Tell the user the visible browser
 If saving requires administrator confirmation or QR scan, keep the modal open and wait. After scanning, run:
 
 ```bash
-opencli browser --session weixin-mp-ip wait time 2 && opencli browser --session weixin-mp-ip state
+opencli browser --session weixin-mp-ip wait time 60 && opencli browser --session weixin-mp-ip state
 ```
 
 ## Remote QR Authorization
@@ -198,7 +198,7 @@ opencli browser --session weixin-mp-ip screenshot /tmp/weixin-mp-auth-qr.png
 
 3. Share the screenshot/image with the user in the conversation so they can scan it from the Codex mobile client with WeChat.
 4. If the QR code expires, refresh/reopen the authorization modal and capture a new screenshot.
-5. After the user scans and confirms, wait and re-run `state` to verify the page shows `设置成功` or the requested whitelist entry.
+5. After the user scans and confirms, wait up to 60 seconds and re-run `state` to verify the page shows `设置成功` or the requested whitelist entry.
 
 ## Completion Check
 
