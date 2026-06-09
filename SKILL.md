@@ -1,6 +1,6 @@
 ---
 name: weixin-mp-api-ip-whitelist
-version: 0.1.0
+version: 0.2.0
 description: Add or update WeChat Official Account / Weixin MP backend API IP whitelist entries for a specific WeChat Official Account AppID through OpenCLI Browser. Use when the user asks to configure API IP whitelist, add server IPs, update IP whitelist, handle QR-code login/admin verification for a Weixin developers console mp product URL, or when another WeChat/Weixin API workflow such as posting articles, uploading images, or publishing to WeChat fails or stalls because the current server/export IP is not in the API IP whitelist.
 ---
 
@@ -48,7 +48,7 @@ opencli browser --session weixin-mp-ip --window foreground open 'https://develop
 ```
 
 8. If the page shows login or verification QR code, leave the browser window visible and wait for the user/admin to scan. Do not ask the user for credentials.
-9. Use `opencli browser --session weixin-mp-ip state` after every navigation or modal change. Use element indices from state for clicks/types.
+9. After login, prefer the "JS Fast Path" to find the IP whitelist editor, merge entries, and submit. Use `state`/indexed clicks only as a fallback when the script reports that it cannot locate the editor or submit control.
 10. Confirm the page AppID matches `WECHAT_APP_ID` before editing any whitelist.
 11. Locate the API IP whitelist editor in the development/basic-info area, read existing entries, append missing IPs, then submit.
 
@@ -75,10 +75,87 @@ Use the outbound IP of the machine where this skill is running. Do not add unrel
 - Use a named foreground session: `opencli browser --session weixin-mp-ip --window foreground ...` for `open`, and `opencli browser --session weixin-mp-ip ...` for later commands.
 - Use `opencli browser --session weixin-mp-ip state` as the primary inspection command.
 - Use `opencli browser --session weixin-mp-ip click <index>`, `type <index>`, `keys`, and `get value <index>` for interaction.
-- Use `eval` only for read-only extraction when `state` is insufficient.
+- Use `eval` for the JS fast path below. It may edit the whitelist only after the visible page is confirmed to belong to the intended `WECHAT_APP_ID`, and it must return the old value, merged value, and submit status.
 - Run `state` after every page-changing click.
 - Prefer exact visible labels such as `开发`, `开发设置`, `基本配置`, `IP白名单`, `服务器IP`, `修改`, `配置`, `确定`, `保存`, or `提交`.
 - If a QR-code verification modal appears after saving, wait for the scan, then verify the success state.
+
+## JS Fast Path
+
+Use this branch after the console page has loaded and login/admin verification is complete. Replace `wx_your_appid` and `1.2.3.4` before running. Keep one IP or CIDR per string in `targetEntries`.
+
+```bash
+opencli browser --session weixin-mp-ip eval '(() => {
+  const expectedAppId = "wx_your_appid";
+  const targetEntries = ["1.2.3.4"];
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const text = (node) => (node && (node.innerText || node.textContent || node.value) || "").trim();
+  const visible = (node) => {
+    if (!node) return false;
+    const rect = node.getBoundingClientRect();
+    const style = getComputedStyle(node);
+    return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+  };
+  const normList = (value) => String(value || "")
+    .split(/[\n,;，；\s]+/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const uniq = (items) => Array.from(new Set(items));
+  const click = (node) => {
+    node.scrollIntoView({ block: "center", inline: "center" });
+    node.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+  };
+  const setValue = (el, value) => {
+    const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
+    setter.call(el, value);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+  return (async () => {
+    if (expectedAppId && !document.body.innerText.includes(expectedAppId)) {
+      return { ok: false, reason: "appid_mismatch_or_not_visible", expectedAppId };
+    }
+    const labels = ["IP白名单", "IP 白名单", "服务器IP", "服务器 IP", "接口权限"];
+    const buttons = [...document.querySelectorAll("button, a, [role=button], .weui-desktop-btn")]
+      .filter(visible);
+    const editButton = buttons.find((btn) => {
+      const btnText = text(btn);
+      if (!/(修改|配置|设置|编辑|查看|详情)/.test(btnText)) return false;
+      const scope = btn.closest("tr, li, section, .weui-desktop-form__item, .weui-desktop-panel, .weui-desktop-card") || btn.parentElement;
+      return labels.some((label) => text(scope).includes(label));
+    });
+    if (editButton) {
+      click(editButton);
+      await sleep(800);
+    }
+    const fields = [...document.querySelectorAll("textarea, input[type=text], input:not([type])")]
+      .filter(visible);
+    const field = fields.find((el) => {
+      const current = el.value || "";
+      const scope = el.closest(".weui-desktop-dialog, .weui-desktop-form__item, form, section, tr, li") || el.parentElement;
+      return labels.some((label) => text(scope).includes(label)) || /^\s*(\d{1,3}\.){3}\d{1,3}/.test(current);
+    }) || fields.find((el) => (el.placeholder || "").includes("IP"));
+    if (!field) return { ok: false, reason: "whitelist_field_not_found" };
+    const oldValue = field.value || "";
+    const merged = uniq([...normList(oldValue), ...normList(targetEntries.join("\n"))]).join("\n");
+    setValue(field, merged);
+    await sleep(200);
+    if ((field.value || "").trim() !== merged.trim()) {
+      return { ok: false, reason: "value_write_failed", oldValue, attemptedValue: merged, actualValue: field.value };
+    }
+    const submitButton = [...document.querySelectorAll("button, a, [role=button], .weui-desktop-btn")]
+      .filter(visible)
+      .find((btn) => /^(确定|保存|提交|确认)$/.test(text(btn)) || /(确定|保存|提交|确认)/.test(text(btn)));
+    if (!submitButton) return { ok: false, reason: "submit_button_not_found", oldValue, mergedValue: merged };
+    click(submitButton);
+    await sleep(1000);
+    return { ok: true, oldValue, mergedValue: merged, added: targetEntries, pageTextHint: document.body.innerText.slice(0, 300) };
+  })();
+})()'
+```
+
+If the command returns `ok: false`, do not keep retrying blindly. Run `opencli browser --session weixin-mp-ip state`, inspect the current labels, and continue with the indexed fallback procedure.
 
 ## Safe Update Procedure
 

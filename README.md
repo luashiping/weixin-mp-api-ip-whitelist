@@ -4,7 +4,7 @@
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-blueviolet)](https://docs.claude.com/en/docs/claude-code/skills)
 [![Codex Skill](https://img.shields.io/badge/Codex-Skill-4B0082)](https://developers.openai.com/codex)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](#)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue)](#)
 [![OpenCLI](https://img.shields.io/badge/powered%20by-OpenCLI%20Browser-orange)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -30,7 +30,7 @@
 - **出口 IP 自动发现**：通过 `api.ipify.org` / `ifconfig.me` / `4.ipw.cn` 探测当前机器出口公网 IPv4
 - **可视化登录**：保留前台浏览器窗口，等待用户 / 管理员扫码，不会索要账号密码
 - **远程扫码授权**：把二维码截图回传到对话，让用户从手机微信扫码
-- **状态可重放**：每一步都基于 `opencli browser state` 的元素索引定位 UI，鲁棒应对控制台改版
+- **JS 快速路径**：登录后优先用 `opencli browser eval` 自动定位白名单编辑器、合并 IP 并保存，失败时再回退到元素索引流程
 
 ---
 
@@ -63,12 +63,14 @@ opencli browser --session weixin-mp-ip --window foreground open \
 opencli browser --session weixin-mp-ip wait time 5 && \
   opencli browser --session weixin-mp-ip state
 
-# 3. 找到「IP 白名单」编辑入口
-#    读取当前值 → 合并新 IP → 写回 → 保存
-opencli browser --session weixin-mp-ip get value <textarea_index>
-# type 之后务必再 get value 校验
+# 3. 登录完成后优先使用 SKILL.md 的「JS Fast Path」
+#    自动定位编辑入口 → 读取当前值 → 合并新 IP → 写回 → 保存
+opencli browser --session weixin-mp-ip eval '<paste JS Fast Path here>'
 
-# 4. 看到「设置成功」或重新读回白名单确认新增 IP 已落库
+# 4. 如果 JS 返回 ok:false，再回退到 state/index 手动定位
+opencli browser --session weixin-mp-ip state
+
+# 5. 看到「设置成功」或重新读回白名单确认新增 IP 已落库
 opencli browser --session weixin-mp-ip state
 ```
 
@@ -101,7 +103,7 @@ opencli browser --session weixin-mp-ip state
 └────────┬─────────┘
          ▼
 ┌──────────────────┐
-│  读 → 合并 → 写   │  ← 永远追加，不覆盖
+│ JS 读 → 合并 → 写 │  ← 永远追加，不覆盖
 └────────┬─────────┘
          ▼
 ┌──────────────────┐
@@ -160,7 +162,7 @@ cat agents/openai.yaml
 提交新版本前请确认：
 
 - `SKILL.md` 的描述行与 `agents/openai.yaml` 的 `default_prompt` 仍能覆盖新场景
-- 新增标签（如控制台改版后的新按钮名）已写入「OpenCLI Rules」段落
+- 新增标签（如控制台改版后的新按钮名）已写入「OpenCLI Rules」或「JS Fast Path」段落
 - 合并规则仍然「追加」而非「覆盖」
 
 ---
