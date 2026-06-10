@@ -1,6 +1,6 @@
 ---
 name: weixin-mp-api-ip-whitelist
-version: 0.2.1
+version: 0.2.2
 description: Add or update WeChat Official Account / Weixin MP backend API IP whitelist entries for a specific WeChat Official Account AppID through OpenCLI Browser. Use when the user asks to configure API IP whitelist, add server IPs, update IP whitelist, handle QR-code login/admin verification for a Weixin developers console mp product URL, or when another WeChat/Weixin API workflow such as posting articles, uploading images, or publishing to WeChat fails or stalls because the current server/export IP is not in the API IP whitelist.
 ---
 
@@ -44,7 +44,8 @@ export WECHAT_APP_ID=wx_your_official_account_appid
 7. Open the console after replacing `<WECHAT_APP_ID>`:
 
 ```bash
-opencli browser --session weixin-mp-ip --window foreground open 'https://developers.weixin.qq.com/console/product/mp/<WECHAT_APP_ID>?tab1=basicInfo&tab2=dev' && opencli browser --session weixin-mp-ip state
+opencli browser open 'https://developers.weixin.qq.com/console/product/mp/<WECHAT_APP_ID>?tab1=basicInfo&tab2=dev'
+opencli browser state
 ```
 
 8. If the page shows login or verification QR code, leave the browser window visible and wait up to 60 seconds for the user/admin to scan. Do not ask the user for credentials.
@@ -72,9 +73,11 @@ Use the outbound IP of the machine where this skill is running. Do not add unrel
 
 ## OpenCLI Rules
 
-- Use a named foreground session: `opencli browser --session weixin-mp-ip --window foreground ...` for `open`, and `opencli browser --session weixin-mp-ip ...` for later commands.
-- Use `opencli browser --session weixin-mp-ip state` as the primary inspection command.
-- Use `opencli browser --session weixin-mp-ip click <index>`, `type <index>`, `keys`, and `get value <index>` for interaction.
+- Use the OpenCLI Browser command format supported by the installed version. OpenCLI Browser 1.7.x uses a single automation window and does not accept `--session` or `--window`.
+- Use `opencli browser open <url>` to open the console.
+- Use `opencli browser state` as the primary inspection command.
+- Use `opencli browser click <index>`, `type <index> <text>`, `keys <key>`, and `get value <index>` for interaction.
+- If a different OpenCLI installation supports session flags, check `opencli browser --help` first before adding them; do not pass unsupported flags.
 - Use `eval` for the JS fast path below. It may edit the whitelist only after the visible page is confirmed to belong to the intended `WECHAT_APP_ID`, and it must return the old value, merged value, and submit status.
 - Run `state` after every page-changing click.
 - Prefer exact visible labels such as `开发`, `开发设置`, `基本配置`, `IP白名单`, `服务器IP`, `修改`, `配置`, `确定`, `保存`, or `提交`.
@@ -85,7 +88,7 @@ Use the outbound IP of the machine where this skill is running. Do not add unrel
 Use this branch after the console page has loaded and login/admin verification is complete. Replace `wx_your_appid` and `1.2.3.4` before running. Keep one IP or CIDR per string in `targetEntries`.
 
 ```bash
-opencli browser --session weixin-mp-ip eval '(() => {
+opencli browser eval '(() => {
   const expectedAppId = "wx_your_appid";
   const targetEntries = ["1.2.3.4"];
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -155,7 +158,7 @@ opencli browser --session weixin-mp-ip eval '(() => {
 })()'
 ```
 
-If the command returns `ok: false`, do not keep retrying blindly. Run `opencli browser --session weixin-mp-ip state`, inspect the current labels, and continue with the indexed fallback procedure.
+If the command returns `ok: false`, do not keep retrying blindly. Run `opencli browser state`, inspect the current labels, and continue with the indexed fallback procedure.
 
 ## Safe Update Procedure
 
@@ -163,7 +166,7 @@ Always append, never replace blindly:
 
 1. Open the whitelist edit dialog or text area.
 2. Confirm the visible page AppID is the intended `WECHAT_APP_ID`.
-3. Read the current textarea/input value with `opencli browser --session weixin-mp-ip get value <index>`.
+3. Read the current textarea/input value with `opencli browser get value <index>`.
 4. Merge current entries with the target list, keeping one IP/CIDR per line.
 5. Preserve existing entries exactly unless a harmless whitespace cleanup is needed.
 6. Select all in the editor, type the merged list, and verify with `get value`.
@@ -174,7 +177,8 @@ Always append, never replace blindly:
 If login is required:
 
 ```bash
-opencli browser --session weixin-mp-ip wait time 60 && opencli browser --session weixin-mp-ip state
+opencli browser wait time 60
+opencli browser state
 ```
 
 Repeat until the page leaves the login screen. Tell the user the visible browser window is ready for scanning only if they have not already scanned.
@@ -182,7 +186,8 @@ Repeat until the page leaves the login screen. Tell the user the visible browser
 If saving requires administrator confirmation or QR scan, keep the modal open and wait. After scanning, run:
 
 ```bash
-opencli browser --session weixin-mp-ip wait time 60 && opencli browser --session weixin-mp-ip state
+opencli browser wait time 60
+opencli browser state
 ```
 
 ## Remote QR Authorization
@@ -193,7 +198,7 @@ Use this when the user is not physically near the computer where the browser win
 2. Capture the visible browser window or QR-code area with OpenCLI:
 
 ```bash
-opencli browser --session weixin-mp-ip screenshot /tmp/weixin-mp-auth-qr.png
+opencli browser screenshot /tmp/weixin-mp-auth-qr.png
 ```
 
 3. Share the screenshot/image with the user in the conversation so they can scan it from the Codex mobile client with WeChat.
@@ -207,4 +212,4 @@ Before reporting success:
 - Confirm the page shows a success toast/state, or reopen/read the whitelist field and verify all requested IPs are present.
 - Confirm the final page still belongs to the target `WECHAT_APP_ID`.
 - Report the exact IPs added and mention any IPs that were already present.
-- If unable to find the whitelist editor because the UI changed, stop after opening the relevant console page and report the current visible labels from `opencli browser --session weixin-mp-ip state`.
+- If unable to find the whitelist editor because the UI changed, stop after opening the relevant console page and report the current visible labels from `opencli browser state`.

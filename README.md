@@ -4,7 +4,7 @@
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-blueviolet)](https://docs.claude.com/en/docs/claude-code/skills)
 [![Codex Skill](https://img.shields.io/badge/Codex-Skill-4B0082)](https://developers.openai.com/codex)
-[![Version](https://img.shields.io/badge/version-0.2.1-blue)](#)
+[![Version](https://img.shields.io/badge/version-0.2.2-blue)](#)
 [![OpenCLI](https://img.shields.io/badge/powered%20by-OpenCLI%20Browser-orange)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -56,23 +56,25 @@ export WECHAT_APP_ID=wx_your_official_account_appid
 
 ```bash
 # 1. 启动 OpenCLI Browser，打开目标公众号控制台
-opencli browser --session weixin-mp-ip --window foreground open \
+opencli browser open \
   "https://developers.weixin.qq.com/console/product/mp/${WECHAT_APP_ID}?tab1=basicInfo&tab2=dev"
 
 # 2. 让浏览器处理登录 / 扫码
-opencli browser --session weixin-mp-ip wait time 60 && \
-  opencli browser --session weixin-mp-ip state
+opencli browser wait time 60
+opencli browser state
 
 # 3. 登录完成后优先使用 SKILL.md 的「JS Fast Path」
-#    自动定位编辑入口 → 读取当前值 → 合并新 IP → 写回 → 保存
-opencli browser --session weixin-mp-ip eval '<paste JS Fast Path here>'
+#    自动定位编辑入口 -> 读取当前值 -> 合并新 IP -> 写回 -> 保存
+opencli browser eval '<paste JS Fast Path here>'
 
 # 4. 如果 JS 返回 ok:false，再回退到 state/index 手动定位
-opencli browser --session weixin-mp-ip state
+opencli browser state
 
 # 5. 看到「设置成功」或重新读回白名单确认新增 IP 已落库
-opencli browser --session weixin-mp-ip state
+opencli browser state
 ```
+
+OpenCLI Browser 1.7.x 使用单个自动化窗口，不支持 `--session` 或 `--window`。如果本机安装的是其他版本，请先用 `opencli browser --help` 确认可用参数。
 
 详细流程、标签定位、安全合并规则见 [`SKILL.md`](./SKILL.md)。
 

@@ -24,7 +24,7 @@ git diff --check
 Use `git diff --check` before committing to catch whitespace errors. To manually validate command examples, use a real OpenCLI Browser installation and a test Weixin MP AppID:
 
 ```bash
-opencli browser --session weixin-mp-ip --window foreground open \
+opencli browser open \
   "https://developers.weixin.qq.com/console/product/mp/${WECHAT_APP_ID}?tab1=basicInfo&tab2=dev"
 ```
 
@@ -32,7 +32,7 @@ opencli browser --session weixin-mp-ip --window foreground open \
 
 Write Markdown in concise, instructional language. Use fenced code blocks with `bash`, `text`, or another accurate language tag. Keep command examples copyable, with placeholders such as `<WECHAT_APP_ID>` or environment variables such as `${WECHAT_APP_ID}`.
 
-YAML files use two-space indentation and quoted user-facing strings where helpful. Skill names and sessions should remain stable: `weixin-mp-api-ip-whitelist` and `weixin-mp-ip`.
+YAML files use two-space indentation and quoted user-facing strings where helpful. Skill names should remain stable: `weixin-mp-api-ip-whitelist`. Do not document OpenCLI Browser session flags unless the supported local OpenCLI version exposes them in `opencli browser --help`.
 
 ## Testing Guidelines
 
